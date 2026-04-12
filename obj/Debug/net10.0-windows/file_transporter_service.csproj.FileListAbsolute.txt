@@ -55,3 +55,4 @@ C:\Users\MC\Repos\file_transporter_service\obj\Debug\net10.0-windows\refint\file
 C:\Users\MC\Repos\file_transporter_service\obj\Debug\net10.0-windows\file_transporter_service.pdb
 C:\Users\MC\Repos\file_transporter_service\obj\Debug\net10.0-windows\file_transporter_service.genruntimeconfig.cache
 C:\Users\MC\Repos\file_transporter_service\obj\Debug\net10.0-windows\ref\file_transporter_service.dll
+C:\Users\MC\Repos\file_transporter_service\obj\Debug\net10.0-windows\file_transporter_service.sourcelink.json

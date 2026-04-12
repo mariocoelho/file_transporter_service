@@ -53,3 +53,4 @@ C:\Users\MC\Repos\file_transporter_service\obj\Release\net10.0-windows\win-x64\r
 C:\Users\MC\Repos\file_transporter_service\obj\Release\net10.0-windows\win-x64\file_transporter_service.pdb
 C:\Users\MC\Repos\file_transporter_service\obj\Release\net10.0-windows\win-x64\file_transporter_service.genruntimeconfig.cache
 C:\Users\MC\Repos\file_transporter_service\obj\Release\net10.0-windows\win-x64\ref\file_transporter_service.dll
+C:\Users\MC\Repos\file_transporter_service\obj\Release\net10.0-windows\win-x64\file_transporter_service.sourcelink.json
