@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 
 public class FileProcessor
@@ -28,9 +29,11 @@ public class FileProcessor
         Directory.CreateDirectory(_settings.QuarantineFolder);
     }
 
-    public (int moved, int errors) ProcessBatch(SourceSettings source)
+    public async Task<(int moved, int errors)> ProcessBatchAsync(SourceSettings source, CancellationToken cancellationToken)
     {
-        var files = Directory.GetFiles(source.SourceFolder, "*" + _settings.FileExtension)
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var files = Directory.EnumerateFiles(source.SourceFolder, "*" + _settings.FileExtension)
             .Take(source.MaxFilesPerBatch)
             .ToList();
 
@@ -50,7 +53,9 @@ public class FileProcessor
 
         foreach (var file in files.Take(available))
         {
-            if (TryMoveWithRetry(file, source))
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (await TryMoveWithRetryAsync(file, source, cancellationToken))
                 moved++;
             else
             {
@@ -62,10 +67,12 @@ public class FileProcessor
         return (moved, errors);
     }
 
-    private bool TryMoveWithRetry(string file, SourceSettings source)
+    private async Task<bool> TryMoveWithRetryAsync(string file, SourceSettings source, CancellationToken cancellationToken)
     {
         for (int i = 0; i < _settings.MaxRetries; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             try
             {
                 var dest = Path.Combine(_settings.DestinationFolder, Path.GetFileName(file));
@@ -82,7 +89,7 @@ public class FileProcessor
                     source.DisplayName,
                     delay);
 
-                Thread.Sleep(delay * 1000);
+                await Task.Delay(TimeSpan.FromSeconds(delay), cancellationToken);
             }
         }
 

@@ -17,34 +17,34 @@ public class Worker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var sources = _settings.GetConfiguredSources();
-
-        if (sources.Count == 0)
+        try
         {
-            logger.LogWarning("No source folders are configured. Service will remain idle.");
-            return;
-        }
+            var sources = _settings.GetConfiguredSources();
 
-        fileProcessor.EnsureFoldersExist(sources);
+            if (sources.Count == 0)
+            {
+                logger.LogWarning("No source folders are configured. Service will remain idle.");
+                return;
+            }
 
-        foreach (var source in sources)
-        {
-            logger.LogInformation(
-                "Source configured. Name: {name}; Source: {source}; Destination: {destination}; Interval: {interval}s; Batch size: {batchSize}",
-                source.DisplayName,
-                source.SourceFolder,
-                _settings.DestinationFolder,
-                source.ScanIntervalSeconds,
-                source.MaxFilesPerBatch);
-        }
+            fileProcessor.EnsureFoldersExist(sources);
 
-        var nextRunBySource = sources.ToDictionary(
-            source => source,
-            _ => DateTimeOffset.UtcNow);
+            foreach (var source in sources)
+            {
+                logger.LogInformation(
+                    "Source configured. Name: {name}; Source: {source}; Destination: {destination}; Interval: {interval}s; Batch size: {batchSize}",
+                    source.DisplayName,
+                    source.SourceFolder,
+                    _settings.DestinationFolder,
+                    source.ScanIntervalSeconds,
+                    source.MaxFilesPerBatch);
+            }
 
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
+            var nextRunBySource = sources.ToDictionary(
+                source => source,
+                _ => DateTimeOffset.UtcNow);
+
+            while (!stoppingToken.IsCancellationRequested)
             {
                 var now = DateTimeOffset.UtcNow;
                 var dueSources = nextRunBySource
@@ -54,36 +54,57 @@ public class Worker(
 
                 foreach (var source in dueSources)
                 {
-                    var (moved, errors) = fileProcessor.ProcessBatch(source);
-                    logger.LogInformation(
-                        "Batch finished for source {source}. Moved: {moved}; Errors: {errors}",
-                        source.DisplayName,
-                        moved,
-                        errors);
+                    try
+                    {
+                        logger.LogDebug("Starting batch for source {source}", source.DisplayName);
+
+                        var (moved, errors) = await fileProcessor.ProcessBatchAsync(source, stoppingToken);
+                        logger.LogInformation(
+                            "Batch finished for source {source}. Moved: {moved}; Errors: {errors}",
+                            source.DisplayName,
+                            moved,
+                            errors);
+                    }
+                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Unhandled error while processing source {source}", source.DisplayName);
+                    }
 
                     var interval = Math.Max(1, source.ScanIntervalSeconds);
                     nextRunBySource[source] = DateTimeOffset.UtcNow.AddSeconds(interval);
                 }
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Unhandled error while processing files");
-            }
 
-            var delay = nextRunBySource.Count == 0
-                ? TimeSpan.FromSeconds(1)
-                : nextRunBySource.Values.Min() - DateTimeOffset.UtcNow;
+                var delay = nextRunBySource.Count == 0
+                    ? TimeSpan.FromSeconds(1)
+                    : nextRunBySource.Values.Min() - DateTimeOffset.UtcNow;
 
-            if (delay < TimeSpan.Zero)
-            {
-                delay = TimeSpan.Zero;
+                if (delay < TimeSpan.Zero)
+                {
+                    delay = TimeSpan.Zero;
+                }
+
+                try
+                {
+                    await Task.Delay(delay, stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
             }
-
-            await Task.Delay(delay, stoppingToken);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            logger.LogInformation("File Transporter worker cancellation requested.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogCritical(ex, "Worker terminated unexpectedly");
+            throw;
         }
     }
 
