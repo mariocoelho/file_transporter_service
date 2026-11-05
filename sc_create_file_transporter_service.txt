@@ -1,0 +1,5 @@
+sc.exe stop "FileTransporterService"
+sc.exe delete "FileTransporterService"
+sc.exe create "FileTransporterService" binPath= "C:\Program Files\FileTransporterService\file_transporter_service.exe"
+sc.exe start "FileTransporterService"
+sc description "FileTransporterService" "Move .dat files to Rx_Apex_to_process"

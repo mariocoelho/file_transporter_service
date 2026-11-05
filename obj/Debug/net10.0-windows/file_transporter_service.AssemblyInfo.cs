@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("file_transporter_service")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+78a9b43c25f807c14c6564f21dfe956598aeb6e8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0ffcc4db3bbf4a2d7d134276633f44237dea3859")]
 [assembly: System.Reflection.AssemblyProductAttribute("file_transporter_service")]
 [assembly: System.Reflection.AssemblyTitleAttribute("file_transporter_service")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
